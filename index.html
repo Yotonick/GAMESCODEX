@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Snake: Pixel Rush</title>
+  <link rel="stylesheet" href="style.css?v=0.4.0" />
+</head>
+<body>
+  <div class="crt"></div>
+  <div id="versionBadge" class="version">v0.0.0</div>
+  <main class="layout">
+    <header class="panel title-panel">
+      <h1>🐍 SNAKE: PIXEL RUSH</h1>
+      <p>Казуальная ретро-змейка с прогрессией, комбо и событиями</p>
+    </header>
+
+    <section class="hud-grid">
+      <div class="panel stat"><span>Счёт</span><strong id="score">0</strong></div>
+      <div class="panel stat"><span>Лучший</span><strong id="best">0</strong></div>
+      <div class="panel stat"><span>Комбо</span><strong id="combo">x1</strong></div>
+      <div class="panel stat"><span>Уровень</span><strong id="level">1</strong></div>
+      <div class="panel stat"><span>Монеты</span><strong id="coins">0</strong></div>
+      <div class="panel stat"><span>Задание</span><strong id="mission">Съешь 5 яблок</strong></div>
+    </section>
+
+    <section class="game-wrap panel">
+      <canvas id="game" width="640" height="640" aria-label="Игровое поле"></canvas>
+      <aside class="side">
+        <h2>Перки (между забегами)</h2>
+        <div class="shop" id="shop"></div>
+        <button id="start" class="btn">Старт</button>
+        <button id="restart" class="btn">Новый забег</button>
+        <p class="hint">Управление: WASD / стрелки, <b>Space</b> — рывок (кулдаун).</p>
+        <p id="eventText" class="event">Событие: спокойствие</p>
+      </aside>
+    </section>
+  </main>
+
+  <script src="game.js?v=0.4.0"></script>
+</body>
+</html>

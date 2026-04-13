@@ -162,6 +162,22 @@ function nextEvent() {
   return structuredClone(pool[Math.floor(Math.random() * pool.length)]);
 }
 
+function consumeFood() {
+  const eventMult = state.event.type === 'coinRain' ? 2 : 1;
+  const plus = 10 * state.combo;
+  state.score += plus;
+  state.runCoins += (1 + state.upgrades.coinBoost) * eventMult;
+  state.coins += (1 + state.upgrades.coinBoost) * eventMult;
+  state.combo = Math.min(state.combo + 1, 9);
+  state.comboTimer = 26;
+  state.food = spawnFood(state.snake);
+  state.speed = Math.max(70, state.speed - 1.2);
+
+  if (!state.mission.byCombo && !state.mission.byScore && !state.mission.byDash) {
+    state.missionProgress++;
+  }
+}
+
 function tick() {
   if (state.over) return;
   state.ticks++;
@@ -193,19 +209,7 @@ function tick() {
   const gotFood = newHead.x === state.food.x && newHead.y === state.food.y;
 
   if (gotFood) {
-    const eventMult = state.event.type === 'coinRain' ? 2 : 1;
-    const plus = 10 * state.combo;
-    state.score += plus;
-    state.runCoins += (1 + state.upgrades.coinBoost) * eventMult;
-    state.coins += (1 + state.upgrades.coinBoost) * eventMult;
-    state.combo = Math.min(state.combo + 1, 9);
-    state.comboTimer = 26;
-    state.food = spawnFood(state.snake);
-    state.speed = Math.max(70, state.speed - 1.2);
-
-    if (!state.mission.byCombo && !state.mission.byScore && !state.mission.byDash) {
-      state.missionProgress++;
-    }
+    consumeFood();
   } else {
     state.snake.pop();
   }
@@ -217,6 +221,10 @@ function tick() {
       if (state.food.x > newHead.x) state.food.x--;
       if (state.food.y < newHead.y) state.food.y++;
       if (state.food.y > newHead.y) state.food.y--;
+    }
+
+    if (newHead.x === state.food.x && newHead.y === state.food.y) {
+      consumeFood();
     }
   }
 

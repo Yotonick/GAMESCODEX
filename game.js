@@ -22,7 +22,7 @@ const missions = [
 ];
 
 const upgrades = {
-  magnet: { name: 'Магнит еды', cost: 30, max: 3, desc: 'Притягивает еду рядом.' },
+  magnet: { name: 'Комбо-ядро', cost: 30, max: 3, desc: 'Дольше держит комбо и иногда удваивает очки.' },
   shield: { name: 'Щит', cost: 45, max: 2, desc: 'Спасает от 1 столкновения.' },
   dash: { name: 'Быстрый рывок', cost: 40, max: 3, desc: 'Уменьшает кулдаун.' },
   coinBoost: { name: 'Монетный буст', cost: 50, max: 3, desc: '+монеты за яблоко.' },
@@ -164,12 +164,14 @@ function nextEvent() {
 
 function consumeFood() {
   const eventMult = state.event.type === 'coinRain' ? 2 : 1;
-  const plus = 10 * state.combo;
+  const critChance = state.upgrades.magnet * 0.12;
+  const crit = Math.random() < critChance;
+  const plus = (10 * state.combo) * (crit ? 2 : 1);
   state.score += plus;
   state.runCoins += (1 + state.upgrades.coinBoost) * eventMult;
   state.coins += (1 + state.upgrades.coinBoost) * eventMult;
   state.combo = Math.min(state.combo + 1, 9);
-  state.comboTimer = 26;
+  state.comboTimer = 26 + state.upgrades.magnet * 6;
   state.food = spawnFood(state.snake);
   state.speed = Math.max(70, state.speed - 1.2);
 
@@ -212,20 +214,6 @@ function tick() {
     consumeFood();
   } else {
     state.snake.pop();
-  }
-
-  if (state.upgrades.magnet > 0) {
-    const d = Math.abs(newHead.x - state.food.x) + Math.abs(newHead.y - state.food.y);
-    if (d <= 2 + state.upgrades.magnet) {
-      if (state.food.x < newHead.x) state.food.x++;
-      if (state.food.x > newHead.x) state.food.x--;
-      if (state.food.y < newHead.y) state.food.y++;
-      if (state.food.y > newHead.y) state.food.y--;
-    }
-
-    if (newHead.x === state.food.x && newHead.y === state.food.y) {
-      consumeFood();
-    }
   }
 
   if (state.mission.byCombo) state.missionProgress = Math.max(state.missionProgress, state.combo);

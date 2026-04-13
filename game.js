@@ -13,7 +13,7 @@ const startBtn = document.getElementById('start');
 const shopEl = document.getElementById('shop');
 const versionBadgeEl = document.getElementById('versionBadge');
 
-const APP_VERSION = '0.3.0';
+const APP_VERSION = '0.4.0';
 versionBadgeEl.textContent = `v${APP_VERSION}`;
 
 const grid = 20;
@@ -27,7 +27,7 @@ const missions = [
 ];
 
 const upgrades = {
-  magnet: { name: 'Комбо-ядро', cost: 30, max: 3, desc: 'Дольше держит комбо и иногда удваивает очки.' },
+  comboCore: { name: 'Комбо-ядро', cost: 30, max: 3, desc: 'Дольше держит комбо и иногда удваивает очки.' },
   shield: { name: 'Щит', cost: 45, max: 2, desc: 'Спасает от 1 столкновения.' },
   dash: { name: 'Быстрый рывок', cost: 40, max: 3, desc: 'Уменьшает кулдаун.' },
   coinBoost: { name: 'Монетный буст', cost: 50, max: 3, desc: '+монеты за яблоко.' },
@@ -39,6 +39,7 @@ function createInitialState() {
   const savedCoins = Number(localStorage.getItem('snake_coins') || 0);
   const savedBest = Number(localStorage.getItem('snake_best') || 0);
   const savedLvls = JSON.parse(localStorage.getItem('snake_upgrades') || '{}');
+  const comboCoreLevel = savedLvls.comboCore ?? savedLvls.magnet ?? 0;
 
   return {
     snake: [{ x: 9, y: 10 }, { x: 8, y: 10 }, { x: 7, y: 10 }],
@@ -57,7 +58,7 @@ function createInitialState() {
     coins: savedCoins,
     runCoins: 0,
     upgrades: {
-      magnet: savedLvls.magnet || 0,
+      comboCore: comboCoreLevel,
       shield: savedLvls.shield || 0,
       dash: savedLvls.dash || 0,
       coinBoost: savedLvls.coinBoost || 0,
@@ -87,6 +88,7 @@ function spawnFood(snake) {
 }
 
 function setDirection(x, y) {
+  if (!state.started) return;
   if (state.over) return;
   if (state.dir.x === -x && state.dir.y === -y) return;
   state.nextDir = { x, y };
@@ -180,14 +182,14 @@ function nextEvent() {
 function consumeFood() {
   const eatenAt = { ...state.food };
   const eventMult = state.event.type === 'coinRain' ? 2 : 1;
-  const critChance = state.upgrades.magnet * 0.12;
+  const critChance = state.upgrades.comboCore * 0.12;
   const crit = Math.random() < critChance;
   const plus = (10 * state.combo) * (crit ? 2 : 1);
   state.score += plus;
   state.runCoins += (1 + state.upgrades.coinBoost) * eventMult;
   state.coins += (1 + state.upgrades.coinBoost) * eventMult;
   state.combo = Math.min(state.combo + 1, 9);
-  state.comboTimer = 26 + state.upgrades.magnet * 6;
+  state.comboTimer = 26 + state.upgrades.comboCore * 6;
   state.food = spawnFood(state.snake);
   state.speed = Math.max(70, state.speed - 1.2);
   spawnParticles(eatenAt.x, eatenAt.y, crit ? '#f9d65f' : '#f34f6f');

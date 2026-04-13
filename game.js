@@ -9,7 +9,12 @@ const coinsEl = document.getElementById('coins');
 const missionEl = document.getElementById('mission');
 const eventTextEl = document.getElementById('eventText');
 const restartBtn = document.getElementById('restart');
+const startBtn = document.getElementById('start');
 const shopEl = document.getElementById('shop');
+const versionBadgeEl = document.getElementById('versionBadge');
+
+const APP_VERSION = '0.3.0';
+versionBadgeEl.textContent = `v${APP_VERSION}`;
 
 const grid = 20;
 const cells = canvas.width / grid;
@@ -47,6 +52,7 @@ function createInitialState() {
     level: 1,
     speed: 130,
     over: false,
+    started: false,
     ticks: 0,
     coins: savedCoins,
     runCoins: 0,
@@ -63,6 +69,8 @@ function createInitialState() {
     dashesUsed: 0,
     event: { name: 'Спокойствие', timer: 900, type: 'calm' },
     reverseControls: false,
+    particles: [],
+    shake: 0,
   };
 }
 
@@ -90,13 +98,19 @@ document.addEventListener('keydown', (e) => {
     ? { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [1, 0], ArrowRight: [-1, 0], w: [0, 1], s: [0, -1], a: [1, 0], d: [-1, 0] }
     : { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], w: [0, -1], s: [0, 1], a: [-1, 0], d: [1, 0] };
   if (map[e.key]) setDirection(...map[e.key]);
-  if (e.code === 'Space') dash();
+  if (e.code === 'Space') {
+    if (!state.started && !state.over) state.started = true;
+    dash();
+  }
 });
 
 restartBtn.onclick = () => resetRun();
+startBtn.onclick = () => {
+  if (!state.over) state.started = true;
+};
 
 function dash() {
-  if (state.over || state.dashCooldown > 0) return;
+  if (state.over || !state.started || state.dashCooldown > 0) return;
   const dashPower = 2;
   for (let i = 0; i < dashPower; i++) {
     state.snake.unshift({
@@ -107,6 +121,7 @@ function dash() {
   }
   state.dashesUsed++;
   state.dashCooldown = Math.max(48 - state.upgrades.dash * 10, 16);
+  state.shake = 5;
 }
 
 function resetRun() {
@@ -163,6 +178,7 @@ function nextEvent() {
 }
 
 function consumeFood() {
+  const eatenAt = { ...state.food };
   const eventMult = state.event.type === 'coinRain' ? 2 : 1;
   const critChance = state.upgrades.magnet * 0.12;
   const crit = Math.random() < critChance;
@@ -174,6 +190,7 @@ function consumeFood() {
   state.comboTimer = 26 + state.upgrades.magnet * 6;
   state.food = spawnFood(state.snake);
   state.speed = Math.max(70, state.speed - 1.2);
+  spawnParticles(eatenAt.x, eatenAt.y, crit ? '#f9d65f' : '#f34f6f');
 
   if (!state.mission.byCombo && !state.mission.byScore && !state.mission.byDash) {
     state.missionProgress++;
@@ -181,7 +198,7 @@ function consumeFood() {
 }
 
 function tick() {
-  if (state.over) return;
+  if (state.over || !state.started) return;
   state.ticks++;
   state.comboTimer = Math.max(0, state.comboTimer - 1);
   if (state.comboTimer === 0) state.combo = 1;
@@ -232,8 +249,37 @@ function tick() {
   savePersistent();
 }
 
+function spawnParticles(cellX, cellY, color) {
+  for (let i = 0; i < 10; i++) {
+    state.particles.push({
+      x: cellX * grid + grid / 2,
+      y: cellY * grid + grid / 2,
+      vx: (Math.random() - 0.5) * 4,
+      vy: (Math.random() - 0.5) * 4,
+      life: 18 + Math.random() * 10,
+      color,
+    });
+  }
+}
+
+function updateEffects() {
+  state.particles = state.particles.filter((p) => p.life > 0);
+  state.particles.forEach((p) => {
+    p.x += p.vx;
+    p.y += p.vy;
+    p.vx *= 0.96;
+    p.vy *= 0.96;
+    p.life -= 1;
+  });
+  if (state.shake > 0) state.shake--;
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const sx = state.shake > 0 ? (Math.random() - 0.5) * state.shake * 2 : 0;
+  const sy = state.shake > 0 ? (Math.random() - 0.5) * state.shake * 2 : 0;
+  ctx.save();
+  ctx.translate(sx, sy);
 
   const bg = state.event.type === 'hyper' ? '#2a1830' : '#18152a';
   ctx.fillStyle = bg;
@@ -256,6 +302,23 @@ function draw() {
     ctx.fillRect(s.x * grid + 2, s.y * grid + 2, grid - 4, grid - 4);
   });
 
+  state.particles.forEach((p) => {
+    ctx.globalAlpha = Math.max(0, p.life / 28);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x, p.y, 3, 3);
+    ctx.globalAlpha = 1;
+  });
+
+  if (!state.started && !state.over) {
+    ctx.fillStyle = '#0009';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 32px Courier New';
+    ctx.fillText('PRESS START', 195, 290);
+    ctx.font = '20px Courier New';
+    ctx.fillText('Нажми кнопку \"Старт\"', 185, 325);
+  }
+
   if (state.over) {
     ctx.fillStyle = '#0008';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -265,6 +328,7 @@ function draw() {
     ctx.font = '20px Courier New';
     ctx.fillText(`Счёт: ${state.score} | Нажми "Новый забег"`, 145, 340);
   }
+  ctx.restore();
 
   scoreEl.textContent = state.score;
   bestEl.textContent = state.best;
@@ -280,9 +344,10 @@ function loop(timestamp) {
   const activeSpeed = state.event.type === 'hyper' ? state.speed * 0.72 : state.speed;
   if (timestamp - last > activeSpeed) {
     tick();
-    draw();
     last = timestamp;
   }
+  updateEffects();
+  draw();
   requestAnimationFrame(loop);
 }
 

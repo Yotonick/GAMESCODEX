@@ -15,6 +15,19 @@ body {
   background: radial-gradient(circle at 20% 10%, #281f47, var(--bg));
   color: var(--text);
 }
+.version {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  border: 2px solid #a192ff;
+  background: #1a1435dd;
+  color: #f9d65f;
+  font-weight: bold;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: .85rem;
+}
 .layout { max-width: 1180px; margin: 24px auto; padding: 0 16px 24px; }
 .panel {
   border: 3px solid var(--line);
